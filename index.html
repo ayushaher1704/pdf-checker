@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Format Checker</title>
+  <style>
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      max-width: 600px;
+      margin: 60px auto;
+      padding: 0 20px;
+      background: white;
+    }
+    .card {
+      background: rgb(255, 255, 255);
+      border-radius: 12px;
+      padding: 28px;
+      border: 1px solid #e5e5e2;
+    }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .subtitle { color: #888; font-size: 13px; margin-bottom: 24px; }
+
+    .drop-zone {
+      border: 2px dashed #454040;
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 16px;
+    }
+    .drop-zone:hover { border-color: #4a90e2; background: #f0f7ff; }
+    .drop-zone input { display: none; }
+    .drop-zone p { color: #888; font-size: 14px; margin-bottom: 14px; }
+
+    button {
+      padding: 9px 22px;s
+      border: 1px solid #2026cd;
+      border-radius: 8px;
+      background: white;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button:hover { background: #f5f5f3; }
+
+    #status { font-size: 13px; color: #888; min-height: 20px; margin-bottom: 12px; }
+
+    #result { display: none; margin-top: 20px; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .info-box {
+      background: #f7f7f5;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .info-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .info-value { font-size: 16px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>PDF Format Checker</h1>
+  <p class="subtitle">Pillai College of Engineering </p>
+
+  <div class="drop-zone" id="dropZone">
+    <p>Drag & drop a PDF here</p>
+    <input type="file" id="fileInput" accept=".pdf">
+    <button onclick="document.getElementById('fileInput').click()">
+      Choose PDF
+    </button>
+  </div>
+
+  <p id="status"></p>
+
+  <div id="result">
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="info-label">Filename</div>
+        <div class="info-value" id="r-filename"></div>
+      </div>
+      <div class="info-box">
+        <div class="info-label">File size</div>
+        <div class="info-value" id="r-size"></div>
+      </div>
+      <div class="info-box">
+        <div class="info-label">Pages</div>
+        <div class="info-value" id="r-pages"></div>
+      </div>
+      <div class="info-box">
+        <div class="info-label">Page size</div>
+        <div class="info-value" id="r-pagesize"></div>
+      </div>
+      <div class="info-box">
+        <div class="info-label">Width</div>
+        <div class="info-value" id="r-width"></div>
+      </div>
+      <div class="info-box">
+        <div class="info-label">Height</div>
+        <div class="info-value" id="r-height"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BACKEND = 'http://127.0.0.1:5000';
+  const dropZone  = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.style.borderColor = '#4a90e2';
+    dropZone.style.background  = '#f0f7ff';
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.style.borderColor = '#ddd';
+    dropZone.style.background  = '';
+  });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.borderColor = '#ddd';
+    dropZone.style.background  = '';
+    uploadFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', () => uploadFile(fileInput.files[0]));
+
+  async function uploadFile(file) {
+    if (!file) return;
+    setStatus('Uploading...');
+    document.getElementById('result').style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(BACKEND + '/check-pdf', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+
+      if (data.error) { setStatus('Error: ' + data.error); return; }
+
+      document.getElementById('r-filename').textContent = data.filename;
+      document.getElementById('r-size').textContent     = data.file_size_kb + ' KB';
+      document.getElementById('r-pages').textContent    = data.pages;
+      document.getElementById('r-pagesize').textContent = data.page_size;
+      document.getElementById('r-width').textContent    = data.width_mm + ' mm';
+      document.getElementById('r-height').textContent   = data.height_mm + ' mm';
+
+      document.getElementById('result').style.display = 'block';
+      setStatus('');
+
+    } catch (err) {
+      setStatus('Cannot connect to backend. Is Flask running?');
+    }
+  }
+
+  function setStatus(msg) {
+    document.getElementById('status').textContent = msg;
+  }
+</script>
+
+</body>
+</html>
