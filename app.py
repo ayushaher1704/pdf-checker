@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask import render_template
 from flask_cors import CORS
 import fitz
 
@@ -10,7 +11,7 @@ app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
 @app.route('/')
 def home():
-    return 'PDF Checker API is running!'
+    return render_template('index.html')
 
 
 @app.route('/check-pdf', methods=['POST'])
