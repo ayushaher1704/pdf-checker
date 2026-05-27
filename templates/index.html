@@ -1,30 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF Format Checker</title>
   <style>
-    body {
-      font-family: 'Times New Roman', Times, serif;
-      max-width: 600px;
-      margin: 60px auto;
-      padding: 0 20px;
-      background:rgb(255, 255, 255);
-    }
-    .card {
-      background: white (255, 119, 0);
-      border-radius: 12px;
-      padding: 28px;
-      border: 1px solid #e5e5e2;
-    }
-    h1 { font-size: 20px; margin-bottom: 4px; }
-    .subtitle { color: #888; font-size: 13px; margin-bottom: 24px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      font-family: sans-serif;
+      background: #f5f5f3;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .shell {
+      max-width: 620px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 14px;
+      border: 1px solid #e5e5e2;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 24px 28px 18px;
+      border-bottom: 1px solid #f0f0ee;
+    }
+    .header h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .header p  { font-size: 13px; color: #888; }
+
+    .body { padding: 24px 28px; }
+
+ 
+    /* Drop zone */
     .drop-zone {
-      border: 2px dashed #454040;
+      border: 2px dashed #ddd;
       border-radius: 10px;
-      padding: 40px;
+      padding: 36px 20px;
       text-align: center;
       cursor: pointer;
       transition: border-color .2s, background .2s;
@@ -34,86 +48,185 @@
     .drop-zone input { display: none; }
     .drop-zone p { color: #888; font-size: 14px; margin-bottom: 14px; }
 
-    button {
+    .pick-btn {
       padding: 9px 22px;
-      border: 1px solid #3237b1;
+      border: 1px solid #ddd;
       border-radius: 8px;
-      background: rgb(255, 255, 255);
+      background: white;
       font-size: 13px;
       cursor: pointer;
     }
-    button:hover { background: #f5f5f3; }
+    .pick-btn:hover { background: #f5f5f3; }
 
-    #status { font-size: 13px; color: #888; min-height: 20px; margin-bottom: 12px; }
-
-    #result { display: none; margin-top: 20px; }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    #status {
+      font-size: 13px;
+      color: #888;
+      min-height: 20px;
+      margin-bottom: 12px;
     }
-    .info-box {
+
+    /* File info bar */
+    .file-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f7f7f5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .file-bar .fname { font-weight: 500; flex: 1; }
+    .file-bar .fmeta { color: #aaa; font-size: 12px; }
+
+    /* Summary */
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat {
       background: #f7f7f5;
       border-radius: 8px;
       padding: 14px;
+      text-align: center;
     }
-    .info-label { font-size: 11px; color: #888; margin-bottom: 4px; }
-    .info-value { font-size: 16px; font-weight: 500; }
+    .stat .num   { font-size: 26px; font-weight: 600; }
+    .stat .lbl   { font-size: 11px; color: #888; margin-top: 2px; }
+    .stat.pass .num { color: #1a7f4b; }
+    .stat.fail .num { color: #c0392b; }
+
+    /* Check cards */
+    .checks { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+
+    .check-card {
+      border: 1px solid #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      border-left: 3px solid #eee;
+    }
+    .check-card.ok  { border-left-color: #2ecc71; }
+    .check-card.err { border-left-color: #e74c3c; }
+
+    .check-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .check-head:hover { background: #fafaf8; }
+
+    .ci {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0;
+    }
+    .ci.ok  { background: #e8f8ef; color: #1a7f4b; }
+    .ci.err { background: #fdecea; color: #c0392b; }
+
+    .ct { flex: 1; }
+    .ct .cn { font-size: 13px; font-weight: 500; }
+    .ct .cm { font-size: 12px; color: #888; margin-top: 2px; }
+
+    .chev { font-size: 16px; color: #ccc; transition: transform .2s; }
+    .check-card.open .chev { transform: rotate(180deg); }
+
+    .check-detail {
+      display: none;
+      padding: 0 14px 12px 46px;
+      font-size: 12px;
+      font-family: monospace;
+      color: #888;
+      background: #fafaf8;
+    }
+    .check-card.open .check-detail { display: block; padding-top: 8px; }
+
+    /* Download btn */
+    .dl-btn {
+      width: 100%; padding: 11px;
+      border: 1px solid #e0e0dd;
+      border-radius: 8px;
+      background: white;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .dl-btn:hover { background: #f5f5f3; }
+
+    #results { display: none; }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h1>PDF Format Checker</h1>
-  <p class="subtitle">Pillai College of Engineering </p>
-
-  <div class="drop-zone" id="dropZone">
-    <p>Drag & drop a PDF here</p>
-    <input type="file" id="fileInput" accept=".pdf">
-    <button onclick="document.getElementById('fileInput').click()">
-      Choose PDF
-    </button>
+<div class="shell">
+  <div class="header">
+    <h1>PDF Format Checker</h1>
+    <p>Pillai College of Engineering</p>
   </div>
 
-  <p id="status"></p>
+  <div class="body">
 
-  <div id="result">
-    <div class="info-grid">
-      <div class="info-box">
-        <div class="info-label">Filename</div>
-        <div class="info-value" id="r-filename"></div>
+  
+
+    <!-- Upload zone -->
+    <div class="drop-zone" id="dropZone">
+      <p>Drag & drop a PDF here</p>
+      <input type="file" id="fileInput" accept=".pdf">
+      <button class="pick-btn"
+        onclick="document.getElementById('fileInput').click()">
+        Choose PDF
+      </button>
+    </div>
+
+    <p id="status"></p>
+
+    <!-- Results -->
+    <div id="results">
+
+      <div class="file-bar">
+        <span class="fname" id="r-name"></span>
+        <span class="fmeta" id="r-meta"></span>
       </div>
-      <div class="info-box">
-        <div class="info-label">File size</div>
-        <div class="info-value" id="r-size"></div>
+
+      <div class="summary">
+        <div class="stat">
+          <div class="num" id="r-total"></div>
+          <div class="lbl">Checks</div>
+        </div>
+        <div class="stat pass">
+          <div class="num" id="r-pass"></div>
+          <div class="lbl">Passed</div>
+        </div>
+        <div class="stat fail">
+          <div class="num" id="r-fail"></div>
+          <div class="lbl">Failed</div>
+        </div>
       </div>
-      <div class="info-box">
-        <div class="info-label">Pages</div>
-        <div class="info-value" id="r-pages"></div>
-      </div>
-      <div class="info-box">
-        <div class="info-label">Page size</div>
-        <div class="info-value" id="r-pagesize"></div>
-      </div>
-      <div class="info-box">
-        <div class="info-label">Width</div>
-        <div class="info-value" id="r-width"></div>
-      </div>
-      <div class="info-box">
-        <div class="info-label">Height</div>
-        <div class="info-value" id="r-height"></div>
-      </div>
+
+      <div class="checks" id="checks-list"></div>
+
+      <button class="dl-btn" onclick="downloadReport()">
+        ↓ Download report (.pdf)
+      </button>
+
     </div>
   </div>
 </div>
 
 <script>
   const BACKEND = 'http://127.0.0.1:5000';
+  let lastData = null;
+
   const dropZone  = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
 
-  dropZone.addEventListener('click', () => fileInput.click());
 
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();
@@ -128,47 +241,247 @@
     e.preventDefault();
     dropZone.style.borderColor = '#ddd';
     dropZone.style.background  = '';
-    uploadFile(e.dataTransfer.files[0]);
+    upload(e.dataTransfer.files[0]);
   });
+  fileInput.addEventListener('change', () => upload(fileInput.files[0]));
 
-  fileInput.addEventListener('change', () => uploadFile(fileInput.files[0]));
-
-  async function uploadFile(file) {
+  async function upload(file) {
     if (!file) return;
-    setStatus('Uploading...');
-    document.getElementById('result').style.display = 'none';
+    setStatus('Checking PDF...');
+    document.getElementById('results').style.display = 'none';
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const fd = new FormData();
+    fd.append('file', file);
+    
 
     try {
-      const response = await fetch(BACKEND + '/check-pdf', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-
+      const res  = await fetch(BACKEND + '/check-pdf', { method: 'POST', body: fd });
+      const data = await res.json();
       if (data.error) { setStatus('Error: ' + data.error); return; }
 
-      document.getElementById('r-filename').textContent = data.filename;
-      document.getElementById('r-size').textContent     = data.file_size_kb + ' KB';
-      document.getElementById('r-pages').textContent    = data.pages;
-      document.getElementById('r-pagesize').textContent = data.page_size;
-      document.getElementById('r-width').textContent    = data.width_mm + ' mm';
-      document.getElementById('r-height').textContent   = data.height_mm + ' mm';
-
-      document.getElementById('result').style.display = 'block';
+      lastData = data;
+      render(data);
       setStatus('');
-
-    } catch (err) {
+    } catch(e) {
       setStatus('Cannot connect to backend. Is Flask running?');
     }
+  }
+
+  function render(d) {
+    document.getElementById('r-name').textContent  = d.filename;
+    document.getElementById('r-meta').textContent  =
+      d.file_size_kb + ' KB · ' + d.pages + ' page(s) · ' + d.page_size;
+    document.getElementById('r-total').textContent = d.total_checks;
+    document.getElementById('r-pass').textContent  = d.passed_count;
+    document.getElementById('r-fail').textContent  = d.failed_count;
+
+    const list = document.getElementById('checks-list');
+    list.innerHTML = d.checks.map((c, i) => `
+      <div class="check-card ${c.passed ? 'ok' : 'err'}" id="cc${i}">
+        <div class="check-head" onclick="tog(${i})">
+          <div class="ci ${c.passed ? 'ok' : 'err'}">${c.passed ? '✓' : '✗'}</div>
+          <div class="ct">
+            <div class="cn">${c.name}</div>
+            <div class="cm">${c.message}</div>
+          </div>
+          <span class="chev">⌄</span>
+        </div>
+        ${c.detail ? `<div class="check-detail">${c.detail}</div>` : ''}
+      </div>
+    `).join('');
+
+    document.getElementById('results').style.display = 'block';
+  }
+
+  function tog(i) {
+    document.getElementById('cc' + i).classList.toggle('open');
   }
 
   function setStatus(msg) {
     document.getElementById('status').textContent = msg;
   }
+
+  function downloadReport() {
+  if (!lastData) return;
+  const d = lastData;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  const pageW  = doc.internal.pageSize.getWidth();
+  const pageH  = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  const colW   = pageW - margin * 2;
+  let y        = margin;
+
+  // ── helper: check if new page needed ──
+  function checkPage(needed = 10) {
+    if (y + needed > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  }
+
+  // ── HEADER ──
+  doc.setFillColor(24, 95, 165);
+  doc.rect(0, 0, pageW, 28, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('PDF Format Checker', margin, 12);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('Pillai College of Engineering — SY EXTC Internship Project', margin, 21);
+
+  y = 38;
+
+  // ── FILE INFO BOX ──
+  doc.setFillColor(247, 247, 245);
+  doc.setDrawColor(229, 229, 226);
+  doc.roundedRect(margin, y, colW, 32, 3, 3, 'FD');
+
+  doc.setTextColor(80, 80, 80);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+
+  const infoLeft  = margin + 6;
+  const infoRight = margin + colW / 2 + 6;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(50, 50, 50);
+  doc.text('File',      infoLeft,  y + 8);
+  doc.text('Size',      infoLeft,  y + 16);
+  doc.text('Pages',     infoLeft,  y + 24);
+  doc.text('Page size', infoRight, y + 8);
+  doc.text('Date',      infoRight, y + 16);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text(d.filename,                        infoLeft  + 18, y + 8);
+  doc.text(d.file_size_kb + ' KB',            infoLeft  + 18, y + 16);
+  doc.text(String(d.pages),                   infoLeft  + 18, y + 24);
+  doc.text(d.page_size,                       infoRight + 22, y + 8);
+  doc.text(new Date().toLocaleString(),        infoRight + 22, y + 16);
+
+  y += 40;
+
+  // ── SUMMARY BOXES ──
+  const boxW = (colW - 8) / 3;
+
+  // Total
+  doc.setFillColor(247, 247, 245);
+  doc.setDrawColor(220, 220, 218);
+  doc.roundedRect(margin, y, boxW, 20, 3, 3, 'FD');
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 30, 30);
+  doc.text(String(d.total_checks), margin + boxW / 2, y + 10, { align: 'center' });
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(130, 130, 130);
+  doc.text('Total checks', margin + boxW / 2, y + 17, { align: 'center' });
+
+  // Passed
+  doc.setFillColor(232, 248, 239);
+  doc.setDrawColor(180, 220, 195);
+  doc.roundedRect(margin + boxW + 4, y, boxW, 20, 3, 3, 'FD');
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(26, 127, 75);
+  doc.text(String(d.passed_count), margin + boxW + 4 + boxW / 2, y + 10, { align: 'center' });
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(26, 127, 75);
+  doc.text('Passed', margin + boxW + 4 + boxW / 2, y + 17, { align: 'center' });
+
+  // Failed
+  doc.setFillColor(253, 236, 234);
+  doc.setDrawColor(220, 180, 178);
+  doc.roundedRect(margin + (boxW + 4) * 2, y, boxW, 20, 3, 3, 'FD');
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(192, 57, 43);
+  doc.text(String(d.failed_count), margin + (boxW + 4) * 2 + boxW / 2, y + 10, { align: 'center' });
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(192, 57, 43);
+  doc.text('Failed', margin + (boxW + 4) * 2 + boxW / 2, y + 17, { align: 'center' });
+
+  y += 28;
+
+  // ── SECTION TITLE ──
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 30, 30);
+  doc.text('Check Results', margin, y);
+  y += 6;
+
+  doc.setDrawColor(229, 229, 226);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + colW, y);
+  y += 6;
+
+  // ── CHECK ROWS ──
+  d.checks.forEach(c => {
+    const rowH = c.detail ? 22 : 14;
+    checkPage(rowH + 4);
+
+    // background
+    doc.setFillColor(c.passed ? 232 : 253, c.passed ? 248 : 236, c.passed ? 239 : 234);
+    doc.setDrawColor(c.passed ? 180 : 220, c.passed ? 220 : 180, c.passed ? 195 : 178);
+    doc.roundedRect(margin, y, colW, rowH, 2, 2, 'FD');
+
+    // icon circle
+    doc.setFillColor(c.passed ? 26 : 192, c.passed ? 127 : 57, c.passed ? 75 : 43);
+    doc.circle(margin + 7, y + rowH / 2, 3.5, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text(c.passed ? '✓' : '✗', margin + 7, y + rowH / 2 + 0.8, { align: 'center' });
+
+    // check name
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(c.name, margin + 14, y + (c.detail ? 7 : rowH / 2 + 1));
+
+    // message
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(8);
+    doc.text(c.message, margin + 14, y + (c.detail ? 13 : rowH / 2 + 1) + (c.detail ? 0 : 5));
+
+    // detail
+    if (c.detail) {
+      doc.setTextColor(130, 130, 130);
+      doc.setFontSize(7);
+      const detailLines = doc.splitTextToSize(c.detail, colW - 16);
+      doc.text(detailLines[0], margin + 14, y + 19);
+    }
+
+    y += rowH + 3;
+  });
+
+  // ── FOOTER ──
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(180, 180, 180);
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      'Generated by PDF Format Checker — Pillai College of Engineering',
+      pageW / 2, pageH - 10, { align: 'center' }
+    );
+    doc.text(`Page ${i} of ${totalPages}`, pageW - margin, pageH - 10, { align: 'right' });
+  }
+
+  // ── SAVE ──
+  const fname = d.filename.replace('.pdf', '');
+  doc.save(`check-report-${fname}.pdf`);
+}
 </script>
 
 </body>
-</html>
