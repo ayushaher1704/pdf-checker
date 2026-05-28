@@ -4,7 +4,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Format Checker  </title>
+  <title>PDF Format Checker</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,32 +14,6 @@
       min-height: 100vh;
       padding: 32px 16px;
     }
-    .settings-section{
-    margin-bottom:20px;
-    padding:15px;
-    background:#f7f7f7;
-    border-radius:10px;
-    border:1px solid #ddd;
-}
-
-.setting-header{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-size:16px;
-    font-weight:600;
-    margin-bottom:10px;
-}
-
-.font-dropdown{
-    margin-left:25px;
-}
-
-.checkbox-label{
-    display:block;
-    margin-bottom:8px;
-    font-size:15px;
-}
 
     .shell {
       max-width: 620px;
@@ -59,18 +33,128 @@
 
     .body { padding: 24px 28px; }
 
- 
+    /* Settings section */
+    .settings-section {
+      margin-bottom: 16px;
+      border: 1px solid #e5e5e2;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* Accordion header */
+    .acc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #f7f7f5;
+      cursor: pointer;
+      user-select: none;
+    }
+    .acc-header:hover { background: #efefed; }
+
+    .acc-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .acc-left input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #4a8abf;
+    }
+    .acc-left label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      cursor: pointer;
+    }
+
+    .acc-arrow {
+      font-size: 13px;
+      color: #aaa;
+      transition: transform 0.2s;
+    }
+    .acc-arrow.open { transform: rotate(180deg); }
+
+    /* Accordion body */
+    .acc-body {
+      display: none;
+      padding: 12px 16px 14px 16px;
+      background: white;
+      border-top: 1px solid #f0f0ee;
+    }
+    .acc-body.open { display: block; }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 14px;
+      color: #444;
+      border-bottom: 1px solid #f5f5f3;
+      cursor: pointer;
+    }
+    .checkbox-label:last-child { border-bottom: none; }
+    .checkbox-label input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: #4a8abf;
+      cursor: pointer;
+    }
+
+    /* Margin inputs */
+    .margin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .margin-input {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .margin-input span {
+      font-size: 11px;
+      color: #888;
+      font-weight: 500;
+    }
+    .margin-input input {
+      padding: 7px 10px;
+      border: 1px solid #ddd;
+      border-radius: 7px;
+      font-size: 13px;
+      width: 100%;
+    }
+    .margin-input input:focus {
+      outline: none;
+      border-color: #4a8abf;
+    }
+
+    /* Column select */
+    .col-select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 7px;
+      font-size: 13px;
+      background: white;
+      margin-top: 4px;
+    }
+
     /* Drop zone */
     .drop-zone {
       border: 2px dashed #ddd;
       border-radius: 10px;
       padding: 36px 20px;
       text-align: center;
-      cursor: pointer;
       transition: border-color .2s, background .2s;
       margin-bottom: 16px;
     }
-    .drop-zone:hover { border-color: #4a90e2; background: #f0f7ff; }
+    .drop-zone.hover { border-color: #4a90e2; background: #f0f7ff; }
     .drop-zone input { display: none; }
     .drop-zone p { color: #888; font-size: 14px; margin-bottom: 14px; }
 
@@ -118,13 +202,13 @@
       padding: 14px;
       text-align: center;
     }
-    .stat .num   { font-size: 26px; font-weight: 600; }
-    .stat .lbl   { font-size: 11px; color: #888; margin-top: 2px; }
+    .stat .num { font-size: 26px; font-weight: 600; }
+    .stat .lbl { font-size: 11px; color: #888; margin-top: 2px; }
     .stat.pass .num { color: #1a7f4b; }
     .stat.fail .num { color: #c0392b; }
 
     /* Check cards */
-    .checks { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+    .checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 
     .check-card {
       border: 1px solid #eee;
@@ -193,60 +277,129 @@
 
 <div class="shell">
   <div class="header">
-    <h1>PDF Format Checker v2</h1>
-    <p>Pillai College of Engineering</p>
+    <h1>PDF Format Checker</h1>
+    <p>Pillai College of Engineering — SY EXTC</p>
   </div>
 
   <div class="body">
-<div class="settings-section">
 
-    <div class="setting-header">
-        <input type="checkbox" id="fontCheck" checked>
-        <label for="fontCheck">Font Check</label>
+    <!-- Font Check accordion -->
+    <div class="settings-section">
+      <div class="acc-header" onclick="toggleAcc('fontBody', 'fontArrow')">
+        <div class="acc-left">
+          <input type="checkbox" id="fontCheck" checked
+            onclick="event.stopPropagation()">
+          <label for="fontCheck" onclick="event.stopPropagation()">
+            Font Check
+          </label>
+        </div>
+        <span class="acc-arrow" id="fontArrow">▼</span>
+      </div>
+      <div class="acc-body" id="fontBody">
+        <label class="checkbox-label">
+          <input type="checkbox" id="timesFont" checked>
+          Times New Roman
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="arialFont">
+          Arial
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="calibriFont">
+          Calibri
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="georgiaFont">
+          Georgia
+        </label>
+      </div>
     </div>
 
-    <div class="font-dropdown">
-
+    <!-- Font Size Check accordion -->
+    <div class="settings-section">
+      <div class="acc-header" onclick="toggleAcc('sizeBody', 'sizeArrow')">
+        <div class="acc-left">
+          <input type="checkbox" id="fontSizeCheck" checked
+            onclick="event.stopPropagation()">
+          <label for="fontSizeCheck" onclick="event.stopPropagation()">
+            Font Size Check
+          </label>
+        </div>
+        <span class="acc-arrow" id="sizeArrow">▼</span>
+      </div>
+      <div class="acc-body" id="sizeBody">
         <label class="checkbox-label">
-            <input type="checkbox" id="timesFont" checked>
-            Times New Roman
+          <input type="checkbox" id="size16" checked>
+          16pt — Chapter Title (Bold)
         </label>
-
         <label class="checkbox-label">
-            <input type="checkbox" id="arialFont">
-            Arial
+          <input type="checkbox" id="size14" checked>
+          14pt — Section Heading (Bold)
         </label>
-
+        <label class="checkbox-label">
+          <input type="checkbox" id="size12bold" checked>
+          12pt — Sub-section (Bold)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="size12" checked>
+          12pt — Body Text (Normal)
+        </label>
+      </div>
     </div>
 
-</div>
-  <div class="settings-section">
-
-    <div class="setting-header">
-        <input type="checkbox" id="fontSizeCheck" checked>
-        <label for="fontSizeCheck">Font Size Check</label>
+    <!-- Margins accordion -->
+    <div class="settings-section">
+      <div class="acc-header" onclick="toggleAcc('marginBody', 'marginArrow')">
+        <div class="acc-left">
+          <input type="checkbox" id="marginCheck" checked
+            onclick="event.stopPropagation()">
+          <label for="marginCheck" onclick="event.stopPropagation()">
+            Margin Check
+          </label>
+        </div>
+        <span class="acc-arrow" id="marginArrow">▼</span>
+      </div>
+      <div class="acc-body" id="marginBody">
+        <div class="margin-grid">
+          <div class="margin-input">
+            <span>Top (mm)</span>
+            <input type="number" id="mTop" value="25" min="0" max="100">
+          </div>
+          <div class="margin-input">
+            <span>Bottom (mm)</span>
+            <input type="number" id="mBottom" value="25" min="0" max="100">
+          </div>
+          <div class="margin-input">
+            <span>Left (mm)</span>
+            <input type="number" id="mLeft" value="25" min="0" max="100">
+          </div>
+          <div class="margin-input">
+            <span>Right (mm)</span>
+            <input type="number" id="mRight" value="25" min="0" max="100">
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="font-dropdown">
-
-        <label class="checkbox-label">
-            <input type="checkbox" id="size12" checked>
-            12pt Body Text
-        </label>
-
-        <label class="checkbox-label">
-            <input type="checkbox" id="size14" checked>
-            14pt Section Heading
-        </label>
-
-        <label class="checkbox-label">
-            <input type="checkbox" id="size16" checked>
-            16pt Chapter Title
-        </label>
-
+    <!-- Column Check accordion -->
+    <div class="settings-section">
+      <div class="acc-header" onclick="toggleAcc('colBody', 'colArrow')">
+        <div class="acc-left">
+          <input type="checkbox" id="colCheck" checked
+            onclick="event.stopPropagation()">
+          <label for="colCheck" onclick="event.stopPropagation()">
+            Column Layout Check
+          </label>
+        </div>
+        <span class="acc-arrow" id="colArrow">▼</span>
+      </div>
+      <div class="acc-body" id="colBody">
+        <select class="col-select" id="colSelect">
+          <option value="single">Single Column</option>
+          <option value="double">Double Column</option>
+        </select>
+      </div>
     </div>
-
-</div>
 
     <!-- Upload zone -->
     <div class="drop-zone" id="dropZone">
@@ -293,53 +446,37 @@
   </div>
 </div>
 
-<script> 
-const settings = {
-
-    fontCheck: document.getElementById('fontCheck').checked,
-
-    allowedFonts: [],
-
-    fontSizeCheck: document.getElementById('fontSizeCheck').checked,
-
-    size12: document.getElementById('size12').checked,
-    size14: document.getElementById('size14').checked,
-    size16: document.getElementById('size16').checked
-};
-
-if(document.getElementById('timesFont').checked){
-    settings.allowedFonts.push("Times New Roman");
-}
-
-if(document.getElementById('arialFont').checked){
-    settings.allowedFonts.push("Arial");
-}
-
-formData.append('settings', JSON.stringify(settings));
+<script>
   const BACKEND = 'http://127.0.0.1:5000';
   let lastData = null;
 
+  // ── Accordion toggle ──────────────────────────────────────────────────────
+  function toggleAcc(bodyId, arrowId) {
+    const body  = document.getElementById(bodyId);
+    const arrow = document.getElementById(arrowId);
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+
+  // ── Drag & drop ───────────────────────────────────────────────────────────
   const dropZone  = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
 
-
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();
-    dropZone.style.borderColor = '#4a90e2';
-    dropZone.style.background  = '#f0f7ff';
+    dropZone.classList.add('hover');
   });
   dropZone.addEventListener('dragleave', () => {
-    dropZone.style.borderColor = '#ddd';
-    dropZone.style.background  = '';
+    dropZone.classList.remove('hover');
   });
   dropZone.addEventListener('drop', e => {
     e.preventDefault();
-    dropZone.style.borderColor = '#ddd';
-    dropZone.style.background  = '';
+    dropZone.classList.remove('hover');
     upload(e.dataTransfer.files[0]);
   });
   fileInput.addEventListener('change', () => upload(fileInput.files[0]));
 
+  // ── Upload ────────────────────────────────────────────────────────────────
   async function upload(file) {
     if (!file) return;
     setStatus('Checking PDF...');
@@ -347,13 +484,36 @@ formData.append('settings', JSON.stringify(settings));
 
     const fd = new FormData();
     fd.append('file', file);
-    
+
+    // Font checks
+    fd.append('check_font',     document.getElementById('fontCheck').checked);
+    fd.append('check_times',    document.getElementById('timesFont').checked);
+    fd.append('check_arial',    document.getElementById('arialFont').checked);
+    fd.append('check_calibri',  document.getElementById('calibriFont').checked);
+    fd.append('check_georgia',  document.getElementById('georgiaFont').checked);
+
+    // Font size checks
+    fd.append('check_font_size',  document.getElementById('fontSizeCheck').checked);
+    fd.append('check_size16',     document.getElementById('size16').checked);
+    fd.append('check_size14',     document.getElementById('size14').checked);
+    fd.append('check_size12bold', document.getElementById('size12bold').checked);
+    fd.append('check_size12',     document.getElementById('size12').checked);
+
+    // Margin checks
+    fd.append('check_margin', document.getElementById('marginCheck').checked);
+    fd.append('top',          document.getElementById('mTop').value);
+    fd.append('bottom',       document.getElementById('mBottom').value);
+    fd.append('left',         document.getElementById('mLeft').value);
+    fd.append('right',        document.getElementById('mRight').value);
+
+    // Column check
+    fd.append('check_col', document.getElementById('colCheck').checked);
+    fd.append('columns',   document.getElementById('colSelect').value);
 
     try {
       const res  = await fetch(BACKEND + '/check-pdf', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.error) { setStatus('Error: ' + data.error); return; }
-
       lastData = data;
       render(data);
       setStatus('');
@@ -362,9 +522,10 @@ formData.append('settings', JSON.stringify(settings));
     }
   }
 
+  // ── Render results ────────────────────────────────────────────────────────
   function render(d) {
-    document.getElementById('r-name').textContent  = d.filename;
-    document.getElementById('r-meta').textContent  =
+    document.getElementById('r-name').textContent = d.filename;
+    document.getElementById('r-meta').textContent =
       d.file_size_kb + ' KB · ' + d.pages + ' page(s) · ' + d.page_size;
     document.getElementById('r-total').textContent = d.total_checks;
     document.getElementById('r-pass').textContent  = d.passed_count;
@@ -396,187 +557,146 @@ formData.append('settings', JSON.stringify(settings));
     document.getElementById('status').textContent = msg;
   }
 
+  // ── Download PDF report ───────────────────────────────────────────────────
   function downloadReport() {
-  if (!lastData) return;
-  const d = lastData;
+    if (!lastData) return;
+    const d = lastData;
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-  const pageW  = doc.internal.pageSize.getWidth();
-  const pageH  = doc.internal.pageSize.getHeight();
-  const margin = 20;
-  const colW   = pageW - margin * 2;
-  let y        = margin;
+    const pageW  = doc.internal.pageSize.getWidth();
+    const pageH  = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const colW   = pageW - margin * 2;
+    let y        = margin;
 
-  // ── helper: check if new page needed ──
-  function checkPage(needed = 10) {
-    if (y + needed > pageH - margin) {
-      doc.addPage();
-      y = margin;
+    function checkPage(needed = 10) {
+      if (y + needed > pageH - margin) {
+        doc.addPage();
+        y = margin;
+      }
     }
-  }
 
-  // ── HEADER ──
-  doc.setFillColor(24, 95, 165);
-  doc.rect(0, 0, pageW, 28, 'F');
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('PDF Format Checker', margin, 12);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text('Pillai College of Engineering — SY EXTC Internship Project', margin, 21);
-
-  y = 38;
-
-  // ── FILE INFO BOX ──
-  doc.setFillColor(247, 247, 245);
-  doc.setDrawColor(229, 229, 226);
-  doc.roundedRect(margin, y, colW, 32, 3, 3, 'FD');
-
-  doc.setTextColor(80, 80, 80);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-
-  const infoLeft  = margin + 6;
-  const infoRight = margin + colW / 2 + 6;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(50, 50, 50);
-  doc.text('File',      infoLeft,  y + 8);
-  doc.text('Size',      infoLeft,  y + 16);
-  doc.text('Pages',     infoLeft,  y + 24);
-  doc.text('Page size', infoRight, y + 8);
-  doc.text('Date',      infoRight, y + 16);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(80, 80, 80);
-  doc.text(d.filename,                        infoLeft  + 18, y + 8);
-  doc.text(d.file_size_kb + ' KB',            infoLeft  + 18, y + 16);
-  doc.text(String(d.pages),                   infoLeft  + 18, y + 24);
-  doc.text(d.page_size,                       infoRight + 22, y + 8);
-  doc.text(new Date().toLocaleString(),        infoRight + 22, y + 16);
-
-  y += 40;
-
-  // ── SUMMARY BOXES ──
-  const boxW = (colW - 8) / 3;
-
-  // Total
-  doc.setFillColor(247, 247, 245);
-  doc.setDrawColor(220, 220, 218);
-  doc.roundedRect(margin, y, boxW, 20, 3, 3, 'FD');
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 30, 30);
-  doc.text(String(d.total_checks), margin + boxW / 2, y + 10, { align: 'center' });
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(130, 130, 130);
-  doc.text('Total checks', margin + boxW / 2, y + 17, { align: 'center' });
-
-  // Passed
-  doc.setFillColor(232, 248, 239);
-  doc.setDrawColor(180, 220, 195);
-  doc.roundedRect(margin + boxW + 4, y, boxW, 20, 3, 3, 'FD');
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(26, 127, 75);
-  doc.text(String(d.passed_count), margin + boxW + 4 + boxW / 2, y + 10, { align: 'center' });
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(26, 127, 75);
-  doc.text('Passed', margin + boxW + 4 + boxW / 2, y + 17, { align: 'center' });
-
-  // Failed
-  doc.setFillColor(253, 236, 234);
-  doc.setDrawColor(220, 180, 178);
-  doc.roundedRect(margin + (boxW + 4) * 2, y, boxW, 20, 3, 3, 'FD');
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(192, 57, 43);
-  doc.text(String(d.failed_count), margin + (boxW + 4) * 2 + boxW / 2, y + 10, { align: 'center' });
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(192, 57, 43);
-  doc.text('Failed', margin + (boxW + 4) * 2 + boxW / 2, y + 17, { align: 'center' });
-
-  y += 28;
-
-  // ── SECTION TITLE ──
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 30, 30);
-  doc.text('Check Results', margin, y);
-  y += 6;
-
-  doc.setDrawColor(229, 229, 226);
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, margin + colW, y);
-  y += 6;
-
-  // ── CHECK ROWS ──
-  d.checks.forEach(c => {
-    const rowH = c.detail ? 22 : 14;
-    checkPage(rowH + 4);
-
-    // background
-    doc.setFillColor(c.passed ? 232 : 253, c.passed ? 248 : 236, c.passed ? 239 : 234);
-    doc.setDrawColor(c.passed ? 180 : 220, c.passed ? 220 : 180, c.passed ? 195 : 178);
-    doc.roundedRect(margin, y, colW, rowH, 2, 2, 'FD');
-
-    // icon circle
-    doc.setFillColor(c.passed ? 26 : 192, c.passed ? 127 : 57, c.passed ? 75 : 43);
-    doc.circle(margin + 7, y + rowH / 2, 3.5, 'F');
+    // Header
+    doc.setFillColor(24, 95, 165);
+    doc.rect(0, 0, pageW, 28, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
-    doc.text(c.passed ? '✓' : '✗', margin + 7, y + rowH / 2 + 0.8, { align: 'center' });
-
-    // check name
-    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(16);
+    doc.text('PDF Format Checker', margin, 12);
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text(c.name, margin + 14, y + (c.detail ? 7 : rowH / 2 + 1));
+    doc.text('Pillai College of Engineering — SY EXTC Internship Project', margin, 21);
+    y = 38;
 
-    // message
+    // File info box
+    doc.setFillColor(247, 247, 245);
+    doc.setDrawColor(229, 229, 226);
+    doc.roundedRect(margin, y, colW, 32, 3, 3, 'FD');
+    const infoLeft  = margin + 6;
+    const infoRight = margin + colW / 2 + 6;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(8);
+    doc.text('File',      infoLeft,  y + 8);
+    doc.text('Size',      infoLeft,  y + 16);
+    doc.text('Pages',     infoLeft,  y + 24);
+    doc.text('Page size', infoRight, y + 8);
+    doc.text('Date',      infoRight, y + 16);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(80, 80, 80);
-    doc.setFontSize(8);
-    doc.text(c.message, margin + 14, y + (c.detail ? 13 : rowH / 2 + 1) + (c.detail ? 0 : 5));
+    doc.text(d.filename,                  infoLeft  + 18, y + 8);
+    doc.text(d.file_size_kb + ' KB',      infoLeft  + 18, y + 16);
+    doc.text(String(d.pages),             infoLeft  + 18, y + 24);
+    doc.text(d.page_size,                 infoRight + 22, y + 8);
+    doc.text(new Date().toLocaleString(), infoRight + 22, y + 16);
+    y += 40;
 
-    // detail
-    if (c.detail) {
-      doc.setTextColor(130, 130, 130);
-      doc.setFontSize(7);
-      const detailLines = doc.splitTextToSize(c.detail, colW - 16);
-      doc.text(detailLines[0], margin + 14, y + 19);
+    // Summary boxes
+    const boxW = (colW - 8) / 3;
+    doc.setFillColor(247, 247, 245);
+    doc.setDrawColor(220, 220, 218);
+    doc.roundedRect(margin, y, boxW, 20, 3, 3, 'FD');
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text(String(d.total_checks), margin + boxW / 2, y + 10, { align: 'center' });
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.setTextColor(130, 130, 130);
+    doc.text('Total checks', margin + boxW / 2, y + 17, { align: 'center' });
+
+    doc.setFillColor(232, 248, 239); doc.setDrawColor(180, 220, 195);
+    doc.roundedRect(margin + boxW + 4, y, boxW, 20, 3, 3, 'FD');
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(26, 127, 75);
+    doc.text(String(d.passed_count), margin + boxW + 4 + boxW / 2, y + 10, { align: 'center' });
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text('Passed', margin + boxW + 4 + boxW / 2, y + 17, { align: 'center' });
+
+    doc.setFillColor(253, 236, 234); doc.setDrawColor(220, 180, 178);
+    doc.roundedRect(margin + (boxW + 4) * 2, y, boxW, 20, 3, 3, 'FD');
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(192, 57, 43);
+    doc.text(String(d.failed_count), margin + (boxW + 4) * 2 + boxW / 2, y + 10, { align: 'center' });
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.setTextColor(192, 57, 43);
+    doc.text('Failed', margin + (boxW + 4) * 2 + boxW / 2, y + 17, { align: 'center' });
+    y += 28;
+
+    // Check results
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text('Check Results', margin, y);
+    y += 6;
+    doc.setDrawColor(229, 229, 226);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y, margin + colW, y);
+    y += 6;
+
+    d.checks.forEach(c => {
+      const rowH = c.detail ? 22 : 14;
+      checkPage(rowH + 4);
+      doc.setFillColor(c.passed ? 232 : 253, c.passed ? 248 : 236, c.passed ? 239 : 234);
+      doc.setDrawColor(c.passed ? 180 : 220, c.passed ? 220 : 180, c.passed ? 195 : 178);
+      doc.roundedRect(margin, y, colW, rowH, 2, 2, 'FD');
+      doc.setFillColor(c.passed ? 26 : 192, c.passed ? 127 : 57, c.passed ? 75 : 43);
+      doc.circle(margin + 7, y + rowH / 2, 3.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+      doc.text(c.passed ? '✓' : '✗', margin + 7, y + rowH / 2 + 0.8, { align: 'center' });
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+      doc.text(c.name, margin + 14, y + (c.detail ? 7 : rowH / 2 + 1));
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.setFontSize(8);
+      doc.text(c.message, margin + 14, y + (c.detail ? 13 : rowH / 2 + 1) + (c.detail ? 0 : 5));
+      if (c.detail) {
+        doc.setTextColor(130, 130, 130);
+        doc.setFontSize(7);
+        const lines = doc.splitTextToSize(c.detail, colW - 16);
+        doc.text(lines[0], margin + 14, y + 19);
+      }
+      y += rowH + 3;
+    });
+
+    // Footer
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(180, 180, 180);
+      doc.setFont('helvetica', 'normal');
+      doc.text(
+        'Generated by PDF Format Checker — Pillai College of Engineering',
+        pageW / 2, pageH - 10, { align: 'center' }
+      );
+      doc.text(`Page ${i} of ${totalPages}`, pageW - margin, pageH - 10, { align: 'right' });
     }
 
-    y += rowH + 3;
-  });
-
-  // ── FOOTER ──
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(180, 180, 180);
-    doc.setFont('helvetica', 'normal');
-    doc.text(
-      'Generated by PDF Format Checker — Pillai College of Engineering',
-      pageW / 2, pageH - 10, { align: 'center' }
-    );
-    doc.text(`Page ${i} of ${totalPages}`, pageW - margin, pageH - 10, { align: 'right' });
+    doc.save(`check-report-${d.filename.replace('.pdf', '')}.pdf`);
   }
-
-  // ── SAVE ──
-  const fname = d.filename.replace('.pdf', '');
-  doc.save(`check-report-${fname}.pdf`);
-}
 </script>
 
 </body>
+</html>
