@@ -4,7 +4,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Format Checker</title>
+  <title>PDF Format Checker  </title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,6 +14,32 @@
       min-height: 100vh;
       padding: 32px 16px;
     }
+    .settings-section{
+    margin-bottom:20px;
+    padding:15px;
+    background:#f7f7f7;
+    border-radius:10px;
+    border:1px solid #ddd;
+}
+
+.setting-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:16px;
+    font-weight:600;
+    margin-bottom:10px;
+}
+
+.font-dropdown{
+    margin-left:25px;
+}
+
+.checkbox-label{
+    display:block;
+    margin-bottom:8px;
+    font-size:15px;
+}
 
     .shell {
       max-width: 620px;
@@ -167,13 +193,60 @@
 
 <div class="shell">
   <div class="header">
-    <h1>PDF Format Checker</h1>
+    <h1>PDF Format Checker v2</h1>
     <p>Pillai College of Engineering</p>
   </div>
 
   <div class="body">
+<div class="settings-section">
 
-  
+    <div class="setting-header">
+        <input type="checkbox" id="fontCheck" checked>
+        <label for="fontCheck">Font Check</label>
+    </div>
+
+    <div class="font-dropdown">
+
+        <label class="checkbox-label">
+            <input type="checkbox" id="timesFont" checked>
+            Times New Roman
+        </label>
+
+        <label class="checkbox-label">
+            <input type="checkbox" id="arialFont">
+            Arial
+        </label>
+
+    </div>
+
+</div>
+  <div class="settings-section">
+
+    <div class="setting-header">
+        <input type="checkbox" id="fontSizeCheck" checked>
+        <label for="fontSizeCheck">Font Size Check</label>
+    </div>
+
+    <div class="font-dropdown">
+
+        <label class="checkbox-label">
+            <input type="checkbox" id="size12" checked>
+            12pt Body Text
+        </label>
+
+        <label class="checkbox-label">
+            <input type="checkbox" id="size14" checked>
+            14pt Section Heading
+        </label>
+
+        <label class="checkbox-label">
+            <input type="checkbox" id="size16" checked>
+            16pt Chapter Title
+        </label>
+
+    </div>
+
+</div>
 
     <!-- Upload zone -->
     <div class="drop-zone" id="dropZone">
@@ -220,7 +293,29 @@
   </div>
 </div>
 
-<script>
+<script> 
+const settings = {
+
+    fontCheck: document.getElementById('fontCheck').checked,
+
+    allowedFonts: [],
+
+    fontSizeCheck: document.getElementById('fontSizeCheck').checked,
+
+    size12: document.getElementById('size12').checked,
+    size14: document.getElementById('size14').checked,
+    size16: document.getElementById('size16').checked
+};
+
+if(document.getElementById('timesFont').checked){
+    settings.allowedFonts.push("Times New Roman");
+}
+
+if(document.getElementById('arialFont').checked){
+    settings.allowedFonts.push("Arial");
+}
+
+formData.append('settings', JSON.stringify(settings));
   const BACKEND = 'http://127.0.0.1:5000';
   let lastData = null;
 

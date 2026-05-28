@@ -1,7 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import fitz
-
 app = Flask(__name__)
 CORS(app)
 
@@ -267,7 +266,7 @@ def check_columns(doc, expected='single'):
 # ── Home ──────────────────────────────────────────────────────────────────────
 @app.route('/')
 def home():
-    return 'PDF Checker API is running!'
+   return render_template('index.html')
 
 
 # ── Main route ────────────────────────────────────────────────────────────────
