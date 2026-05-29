@@ -12,6 +12,86 @@ def pt_to_mm(pt):
     return round(pt * 0.3528, 1)
 
 
+def check_allowed_fonts(doc, allowed_fonts):
+
+    if not allowed_fonts:
+        return {
+            'name': 'Allowed fonts',
+            'passed': True,
+            'message': 'No font restrictions selected',
+            'detail': 'No allowed font list provided'
+        }
+
+    wrong_pages = []
+    fonts_found = set()
+    unexpected_fonts = set()
+
+    allowed_norm = [
+        font.lower().replace(' ', '')
+        for font in allowed_fonts
+    ]
+
+    for page_num, page in enumerate(doc):
+
+        for block in page.get_text('dict')['blocks']:
+
+            if block['type'] != 0:
+                continue
+
+            for line in block['lines']:
+
+                for span in line['spans']:
+
+                    base = span['font'].split('-')[0].split(',')[0].strip()
+
+                    # Normalize display names
+                    display_font = base
+
+                    if "timesnewroman" in base.lower():
+                        display_font = "Times New Roman"
+
+                    elif "arial" in base.lower():
+                        display_font = "Arial"
+
+                    elif "calibri" in base.lower():
+                        display_font = "Calibri"
+
+                    elif "georgia" in base.lower():
+                        display_font = "Georgia"
+
+                    fonts_found.add(display_font)
+
+                    actual = display_font.lower().replace(' ', '')
+
+                    allowed = any(
+                        font in actual
+                        for font in allowed_norm
+                    )
+
+                    if not allowed:
+
+                        unexpected_fonts.add(display_font)
+
+                        if page_num + 1 not in wrong_pages:
+                            wrong_pages.append(page_num + 1)
+
+    passed = len(unexpected_fonts) == 0
+
+    return {
+        'name': 'Allowed fonts',
+        'passed': passed,
+        'message':
+            'All fonts are allowed'
+            if passed
+            else 'Unexpected fonts: ' +
+                 ', '.join(sorted(unexpected_fonts)),
+        'detail':
+            f'Allowed fonts: {", ".join(allowed_fonts)}\n'
+            f'Fonts found: {", ".join(sorted(fonts_found))}\n'
+            f'Pages affected: {wrong_pages[:10]}'
+    }
+
+
 def check_font_name(doc, expected_font):
     wrong_pages = []
     fonts_found = set()
@@ -24,7 +104,10 @@ def check_font_name(doc, expected_font):
                 for span in line['spans']:
                     base = span['font'].split('-')[0].split(',')[0].strip()
                     fonts_found.add(base)
-                    if expected_font.lower() not in base.lower():
+                    expected = expected_font.lower().replace(" ", "")
+                    actual = base.lower().replace(" ", "")
+
+                    if expected not in actual:
                         if page_num + 1 not in wrong_pages:
                             wrong_pages.append(page_num + 1)
 
@@ -245,19 +328,7 @@ def check_pdf():
         return jsonify({'error': 'No file uploaded'}), 400
 
     file = request.files['file']
-# Get selected checks from frontend
-    font_check = request.form.get("font_check") == "true"
-    size_check = request.form.get("size_check") == "true"
-    margin_check = request.form.get("margin_check") == "true"
-    column_check = request.form.get("column_check") == "true"
 
-# Selected fonts
-    selected_fonts = request.form.getlist("fonts")
-
-# Selected sizes
-    selected_sizes = request.form.getlist("sizes")
-    if not file.filename.endswith('.pdf'):
-        return jsonify({'error': 'Only PDF files allowed'}), 400
 
     # Read all checkbox values
     do_font      = request.form.get('check_font',      'true')  == 'true'
@@ -300,28 +371,45 @@ def check_pdf():
 
     checks = []
 
-# Font check
-    if font_check:
-        expected_font = selected_fonts[0] if selected_fonts else 'Times'
-        checks.append(check_font_name(doc, expected_font))
+    # Font name checks
+    if do_font:
+        allowed_fonts = []
 
-# Font size checks
-    if size_check:
+        if do_times:
+            allowed_fonts.append("Times New Roman")
 
-     if '16' in selected_sizes:
-        checks.append(check_chapter_title(doc))
+        if do_arial:
+            allowed_fonts.append("Arial")
 
-     if '14' in selected_sizes:
-        checks.append(check_section_heading(doc))
+        if do_calibri:
+            allowed_fonts.append("Calibri")
 
-     if '12bold' in selected_sizes:
-        checks.append(check_subsection_heading(doc))
+        if do_georgia:
+            allowed_fonts.append("Georgia")
 
-     if '12' in selected_sizes:
-        checks.append(check_body_text(doc))
+        checks.append(
+            check_allowed_fonts(
+                doc,
+                allowed_fonts
+            )
+        )
 
+    # Font size checks
+    if do_size:
+
+        if do_size16:
+            checks.append(check_chapter_title(doc))
+
+        if do_size14:
+            checks.append(check_section_heading(doc))
+
+        if do_size12b:
+            checks.append(check_subsection_heading(doc))
+
+        if do_size12:
+            checks.append(check_body_text(doc))
     # Margin check
-    if margin_check:
+    if do_margin:
         checks.append(
             check_margins(
                 doc,
@@ -334,7 +422,7 @@ def check_pdf():
 
     # Column check
     # map expected_col ('single'/'double') to function parameter
-    if column_check:
+    if do_col:
         checks.append(
             check_columns(
                 doc,
