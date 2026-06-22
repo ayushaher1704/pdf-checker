@@ -23,15 +23,52 @@
       border: 1px solid #e5e5e2;
       overflow: hidden;
     }
+.header{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    padding:24px 28px 18px;
+    border-bottom:1px solid #f0f0ee;
+}
+.select-box{
+    width:100%;
+    display:block;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+    background:white;
+}
+.logo{
+    width:300px;
+    max-width:100%;
+    height:auto;
+}
+.project-title{
+    text-align:center;
+    padding:15px 20px;
+}
 
-    .header {
-      padding: 24px 28px 18px;
-      border-bottom: 1px solid #f0f0ee;
-    }
-    .header h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
-    .header p  { font-size: 13px; color: #888; }
+.project-title h1{
+    font-size:42px;
+    font-weight:700;
+    margin-bottom:8px;
+}
 
-    .body { padding: 24px 28px; }
+.project-title p{
+    margin:3px 0;
+    color:#666;
+    font-size:15px;
+}
+
+.header-text h1{
+    margin:0;
+}
+
+.header-text p{
+    margin:2px 0;
+    color:#666;
+}
 
     /* Settings section */
     .settings-section {
@@ -277,11 +314,26 @@
 
 <div class="shell">
   <div class="header">
+    <img src="/static/pce-logo.png" class="logo">
+</div>
+
+<div class="project-title">
     <h1>PDF Format Checker</h1>
-    <p>Pillai College of Engineering — SY EXTC</p>
-  </div>
+    <p>Pillai College of Engineering</p>
+    
+</div>
 
   <div class="body">
+
+     <!-- Upload zone -->
+    <div class="drop-zone" id="dropZone">
+      <p>Drag & drop a PDF here</p>
+      <input type="file" id="fileInput" accept=".pdf">
+      <button class="pick-btn"
+        onclick="document.getElementById('fileInput').click()">
+        Choose PDF
+      </button>
+    </div>
 
     <!-- Font Check accordion -->
     <div class="settings-section">
@@ -296,24 +348,15 @@
         <span class="acc-arrow" id="fontArrow">▼</span>
       </div>
       <div class="acc-body" id="fontBody">
-        <label class="checkbox-label">
-          <input type="checkbox" id="timesFont" checked>
-          Times New Roman
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="arialFont">
-          Arial
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="calibriFont">
-          Calibri
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="georgiaFont">
-          Georgia
-        </label>
-      </div>
-    </div>
+      
+      <select id="fontSelect" class="select-box">
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Arial">Arial</option>
+        <option value="Calibri">Calibri</option>
+        <option value="Georgia">Georgia</option>
+      </select>
+
+</div>
 
     <!-- Font Size Check accordion -->
     <div class="settings-section">
@@ -330,19 +373,19 @@
       <div class="acc-body" id="sizeBody">
         <label class="checkbox-label">
           <input type="checkbox" id="size16" checked>
-          16pt — Chapter Title (Bold)
+          16pt — Chapter Title 
         </label>
         <label class="checkbox-label">
           <input type="checkbox" id="size14" checked>
-          14pt — Section Heading (Bold)
+          14pt — Section Heading 
         </label>
         <label class="checkbox-label">
           <input type="checkbox" id="size12bold" checked>
-          12pt — Sub-section (Bold)
+          12pt — Sub-section 
         </label>
         <label class="checkbox-label">
           <input type="checkbox" id="size12" checked>
-          12pt — Body Text (Normal)
+          12pt — Body Text 
         </label>
       </div>
     </div>
@@ -401,15 +444,23 @@
       </div>
     </div>
 
-    <!-- Upload zone -->
-    <div class="drop-zone" id="dropZone">
-      <p>Drag & drop a PDF here</p>
-      <input type="file" id="fileInput" accept=".pdf">
-      <button class="pick-btn"
-        onclick="document.getElementById('fileInput').click()">
-        Choose PDF
-      </button>
+   <div class="settings-section">
+    <div class="acc-header" onclick="toggleAcc('dpiBody', 'dpiArrow')">
+        <div class="acc-left">
+            <input type="checkbox" id="dpiCheck" checked
+                   onclick="event.stopPropagation()">
+            <label for="dpiCheck"
+                   onclick="event.stopPropagation()">
+                Image DPI Check
+            </label>
+        </div>
+        <span class="acc-arrow" id="dpiArrow">▼</span>
     </div>
+
+    <div class="acc-body" id="dpiBody">
+        <p>Minimum image resolution: <b>300 DPI</b></p>
+    </div>
+</div>
 
     <p id="status"></p>
 
@@ -484,13 +535,11 @@
 
     const fd = new FormData();
     fd.append('file', file);
-
+    
     // Font checks
     fd.append('check_font',     document.getElementById('fontCheck').checked);
-    fd.append('check_times',    document.getElementById('timesFont').checked);
-    fd.append('check_arial',    document.getElementById('arialFont').checked);
-    fd.append('check_calibri',  document.getElementById('calibriFont').checked);
-    fd.append('check_georgia',  document.getElementById('georgiaFont').checked);
+    fd.append('selected_font',
+    document.getElementById('fontSelect').value);
 
     // Font size checks
     fd.append('check_font_size',  document.getElementById('fontSizeCheck').checked);
@@ -510,6 +559,8 @@
     fd.append('check_col', document.getElementById('colCheck').checked);
     fd.append('columns',   document.getElementById('colSelect').value);
 
+    fd.append('check_dpi',document.getElementById('dpiCheck').checked);
+ 
     try {
       const res  = await fetch(BACKEND + '/check-pdf', { method: 'POST', body: fd });
       const data = await res.json();
@@ -556,7 +607,16 @@
   function setStatus(msg) {
     document.getElementById('status').textContent = msg;
   }
+document.getElementById('fontSizeCheck').addEventListener('change', function() {
 
+    const state = this.checked;
+
+    document.getElementById('size16').checked = state;
+    document.getElementById('size14').checked = state;
+    document.getElementById('size12bold').checked = state;
+    document.getElementById('size12').checked = state;
+
+});
   // ── Download PDF report ───────────────────────────────────────────────────
   function downloadReport() {
     if (!lastData) return;
@@ -587,7 +647,7 @@
     doc.text('PDF Format Checker', margin, 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text('Pillai College of Engineering — SY EXTC Internship Project', margin, 21);
+    doc.text('Pillai College of Engineering ', margin, 21);
     y = 38;
 
     // File info box

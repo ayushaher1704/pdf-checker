@@ -129,9 +129,8 @@ def check_chapter_title(doc):
                 continue
             for line in block['lines']:
                 for span in line['spans']:
-                    size = span['size']
-                    bold = 'bold' in span['font'].lower() or span['flags'] & 2**4
-                    if size >= 15.5 and bold:
+                     size = span['size']
+                     if size >= 15.5 :
                         found.append({
                             'page': page_num + 1,
                             'size': round(size, 1),
@@ -141,10 +140,10 @@ def check_chapter_title(doc):
     passed = len(found) > 0
     detail = '; '.join([f"p{f['page']}: \"{f['text']}\" ({f['size']}pt)" for f in found[:3]])
     return {
-        'name'   : 'Chapter title (16pt bold)',
+        'name'   : 'Chapter title (16pt )',
         'passed' : passed,
         'message': f'{len(found)} chapter title(s) found' if passed else
-                   'No 16pt bold text found',
+                   'No 16pt body text found',
         'detail' : detail if detail else 'None found'
     }
 
@@ -158,8 +157,7 @@ def check_section_heading(doc):
             for line in block['lines']:
                 for span in line['spans']:
                     size = span['size']
-                    bold = 'bold' in span['font'].lower() or span['flags'] & 2**4
-                    if 13.5 <= size < 15.5 and bold:
+                    if 13.5 <= size < 15.5:
                         found.append({
                             'page': page_num + 1,
                             'size': round(size, 1),
@@ -169,10 +167,10 @@ def check_section_heading(doc):
     passed = len(found) > 0
     detail = '; '.join([f"p{f['page']}: \"{f['text']}\" ({f['size']}pt)" for f in found[:3]])
     return {
-        'name'   : 'Section heading (14pt bold)',
+        'name'   : 'Section heading (14pt)',
         'passed' : passed,
         'message': f'{len(found)} section heading(s) found' if passed else
-                   'No 14pt bold text found',
+                   'No 14pt bodytext found',
         'detail' : detail if detail else 'None found'
     }
 
@@ -186,8 +184,7 @@ def check_subsection_heading(doc):
             for line in block['lines']:
                 for span in line['spans']:
                     size = span['size']
-                    bold = 'bold' in span['font'].lower() or span['flags'] & 2**4
-                    if 11.5 <= size < 13.5 and bold:
+                    if 11.5 <= size < 13.5 :
                         found.append({
                             'page': page_num + 1,
                             'size': round(size, 1),
@@ -197,10 +194,10 @@ def check_subsection_heading(doc):
     passed = len(found) > 0
     detail = '; '.join([f"p{f['page']}: \"{f['text']}\" ({f['size']}pt)" for f in found[:3]])
     return {
-        'name'   : 'Sub-section heading (12pt bold)',
+        'name'   : 'Sub-section heading (12pt)',
         'passed' : passed,
         'message': f'{len(found)} sub-section heading(s) found' if passed else
-                   'No 12pt bold text found',
+                   'No 12pt body text found',
         'detail' : detail if detail else 'None found'
     }
 
@@ -213,17 +210,16 @@ def check_body_text(doc):
                 continue
             for line in block['lines']:
                 for span in line['spans']:
-                    size = span['size']
-                    bold = 'bold' in span['font'].lower() or span['flags'] & 2**4
+                    size = span['size'] 
                     text = span['text'].strip()
                     if len(text) <= 2:
                         continue
-                    if not bold and size < 11.5:
+                    if  size < 11.5:
                         violations.append(f"p{page_num+1}: {round(size,1)}pt")
 
     passed = len(violations) == 0
     return {
-        'name'   : 'Body text (12pt normal)',
+        'name'   : 'Body text (12pt )',
         'passed' : passed,
         'message': 'All body text is 12pt or above' if passed else
                    f'{len(violations)} body text violation(s) found',
@@ -265,11 +261,13 @@ def check_margins(doc, exp_top=25, exp_bottom=25, exp_left=25, exp_right=25):
         right_mm  = pt_to_mm(page_w - right_x)
         bottom_mm = pt_to_mm(page_h - bottom_y)
 
+        TOL=2.0
+
         page_v = []
-        if left_mm   < exp_left:   page_v.append(f'Left:{left_mm}mm')
-        if right_mm  < exp_right:  page_v.append(f'Right:{right_mm}mm')
-        if top_mm    < exp_top:    page_v.append(f'Top:{top_mm}mm')
-        if bottom_mm < exp_bottom: page_v.append(f'Bottom:{bottom_mm}mm')
+        if left_mm   < (exp_left - TOL):   page_v.append(f'Left:{left_mm}mm')
+        if right_mm  < (exp_right - TOL):  page_v.append(f'Right:{right_mm}mm')
+        if top_mm    < (exp_top - TOL):    page_v.append(f'Top:{top_mm}mm')
+        if bottom_mm < (exp_bottom - TOL): page_v.append(f'Bottom:{bottom_mm}mm')
 
         if page_v:
             violations.append(f'Page {page_num+1}: ' + ' | '.join(page_v))
@@ -314,8 +312,70 @@ def check_columns(doc, expected='single'):
         'message': message,
         'detail' : f'Expected: {expected} | Double pages: {double_pages if double_pages else "none"}'
     }
+def check_image_dpi(doc):
 
+    violations = []
+    image_count = 0
 
+    for page_num, page in enumerate(doc):
+
+        images = page.get_images(full=True)
+
+        for img in images:
+
+            xref = img[0]
+
+            try:
+                pix = fitz.Pixmap(doc, xref)
+                if pix.width < 300 or pix.height < 300:
+                    continue
+
+                rects = page.get_image_rects(xref)
+
+                if not rects:
+                    continue
+
+                r = rects[0]
+
+                width_in = r.width / 72
+                height_in = r.height / 72
+
+                dpi_x = pix.width / width_in
+                dpi_y = pix.height / height_in
+
+                dpi = min(dpi_x, dpi_y)
+
+                image_count += 1
+
+                if dpi < 300:
+
+                    violations.append(
+                        f'P{page_num+1}: {round(dpi)} DPI'
+                    )
+
+            except Exception:
+                pass
+
+    if image_count == 0:
+        return {
+            'name': 'Image DPI Check',
+            'passed': True,
+            'message': 'No images found',
+            'detail': 'PDF contains no embedded images'
+        }
+
+    passed = len(violations) == 0
+
+    return {
+        'name': 'Image DPI Check',
+        'passed': passed,
+        'message': (
+            f'All {image_count} image(s) are 300+ DPI'
+            if passed else
+            f'{len(violations)} image(s) below 300 DPI'
+        ),
+        'detail': ' | '.join(violations[:10]) if violations else 'No violations'
+    }
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -332,11 +392,7 @@ def check_pdf():
 
     # Read all checkbox values
     do_font      = request.form.get('check_font',      'true')  == 'true'
-    do_times     = request.form.get('check_times',     'true')  == 'true'
-    do_arial     = request.form.get('check_arial',     'false') == 'true'
-    do_calibri   = request.form.get('check_calibri',   'false') == 'true'
-    do_georgia   = request.form.get('check_georgia',   'false') == 'true'
-
+    selected_font = request.form.get('selected_font', 'Times New Roman')
     do_size      = request.form.get('check_font_size', 'true')  == 'true'
     do_size16    = request.form.get('check_size16',    'true')  == 'true'
     do_size14    = request.form.get('check_size14',    'true')  == 'true'
@@ -351,7 +407,9 @@ def check_pdf():
 
     do_col       = request.form.get('check_col',       'true')  == 'true'
     expected_col = request.form.get('columns',         'single')
-
+    
+    do_dpi = request.form.get('check_dpi', 'true') == 'true'
+    
     pdf_bytes = file.read()
     doc       = fitz.open(stream=pdf_bytes, filetype='pdf')
 
@@ -373,26 +431,7 @@ def check_pdf():
 
     # Font name checks
     if do_font:
-        allowed_fonts = []
-
-        if do_times:
-            allowed_fonts.append("Times New Roman")
-
-        if do_arial:
-            allowed_fonts.append("Arial")
-
-        if do_calibri:
-            allowed_fonts.append("Calibri")
-
-        if do_georgia:
-            allowed_fonts.append("Georgia")
-
-        checks.append(
-            check_allowed_fonts(
-                doc,
-                allowed_fonts
-            )
-        )
+        checks.append(check_font_name(doc, selected_font))
 
     # Font size checks
     if do_size:
@@ -429,6 +468,10 @@ def check_pdf():
                 expected_col
             )
         )
+    # Image DPI check
+    if do_dpi:
+        checks.append(check_image_dpi(doc))
+
     doc.close()
 
     passed_count = sum(1 for c in checks if c['passed'])
