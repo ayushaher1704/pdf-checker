@@ -312,7 +312,7 @@ def check_columns(doc, expected='single'):
         'message': message,
         'detail' : f'Expected: {expected} | Double pages: {double_pages if double_pages else "none"}'
     }
-def check_image_dpi(doc):
+def check_image_dpi(doc, min_dpi=300):
 
     violations = []
     image_count = 0
@@ -346,8 +346,9 @@ def check_image_dpi(doc):
                 dpi = min(dpi_x, dpi_y)
 
                 image_count += 1
-
-                if dpi < 300:
+                print("MIN DPI =", min_dpi)
+                print("IMAGE DPI =", round(dpi))
+                if dpi < min_dpi:
 
                     violations.append(
                         f'P{page_num+1}: {round(dpi)} DPI'
@@ -369,11 +370,7 @@ def check_image_dpi(doc):
     return {
         'name': 'Image DPI Check',
         'passed': passed,
-        'message': (
-            f'All {image_count} image(s) are 300+ DPI'
-            if passed else
-            f'{len(violations)} image(s) below 300 DPI'
-        ),
+        'message': f'{len(violations)} of {image_count} image(s) below {min_dpi} DPI',
         'detail': ' | '.join(violations[:10]) if violations else 'No violations'
     }
 @app.route('/')
@@ -409,6 +406,8 @@ def check_pdf():
     expected_col = request.form.get('columns',         'single')
     
     do_dpi = request.form.get('check_dpi', 'true') == 'true'
+    print(request.form)
+    min_dpi = int(request.form.get('min_dpi', 300))
     
     pdf_bytes = file.read()
     doc       = fitz.open(stream=pdf_bytes, filetype='pdf')
@@ -470,7 +469,7 @@ def check_pdf():
         )
     # Image DPI check
     if do_dpi:
-        checks.append(check_image_dpi(doc))
+        checks.append(check_image_dpi(doc, min_dpi))
 
     doc.close()
 

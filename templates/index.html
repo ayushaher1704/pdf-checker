@@ -39,6 +39,13 @@
     font-size:16px;
     background:white;
 }
+.dpi-input{
+    width:100px;
+    padding:8px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    margin-left:10px;
+}
 .logo{
     width:300px;
     max-width:100%;
@@ -458,7 +465,13 @@
     </div>
 
     <div class="acc-body" id="dpiBody">
-        <p>Minimum image resolution: <b>300 DPI</b></p>
+        <label for="minDpi"><b>Minimum Image DPI:</b></label>
+        <input
+          type="number"
+          id="minDpi"
+          value="300"
+          min="1"
+          class="dpi-input">
     </div>
 </div>
 
@@ -560,7 +573,8 @@
     fd.append('columns',   document.getElementById('colSelect').value);
 
     fd.append('check_dpi',document.getElementById('dpiCheck').checked);
- 
+    fd.append('min_dpi',document.getElementById('minDpi').value);
+ console.log("MIN DPI VALUE =", document.getElementById('minDpi').value);
     try {
       const res  = await fetch(BACKEND + '/check-pdf', { method: 'POST', body: fd });
       const data = await res.json();
