@@ -475,6 +475,58 @@
     </div>
 </div>
 
+<!-- Image Alignment Check accordion -->
+<div class="settings-section">
+
+    <div class="acc-header"
+         onclick="toggleAcc('alignBody', 'alignArrow')">
+
+        <div class="acc-left">
+            <input type="checkbox"
+                   id="alignCheck"
+                   checked
+                   onclick="event.stopPropagation()">
+
+            <label for="alignCheck"
+                   onclick="event.stopPropagation()">
+                Image Alignment Check
+            </label>
+        </div>
+
+        <span class="acc-arrow" id="alignArrow">▼</span>
+    </div>
+
+    <div class="acc-body" id="alignBody">
+        <p>Check if all images are center aligned.</p>
+    </div>
+<!-- Paragraph Justification Check -->
+<div class="settings-section">
+
+    <div class="acc-header"
+         onclick="toggleAcc('justifyBody','justifyArrow')">
+
+        <div class="acc-left">
+            <input type="checkbox"
+                   id="justifyCheck"
+                   checked
+                   onclick="event.stopPropagation()">
+
+            <label for="justifyCheck"
+                   onclick="event.stopPropagation()">
+                Paragraph Justification Check
+            </label>
+        </div>
+
+        <span class="acc-arrow" id="justifyArrow">▼</span>
+    </div>
+
+    <div class="acc-body" id="justifyBody">
+        <p>Check whether paragraphs are justified.</p>
+    </div>
+
+</div>
+
+</div>
     <p id="status"></p>
 
     <!-- Results -->
@@ -574,7 +626,16 @@
 
     fd.append('check_dpi',document.getElementById('dpiCheck').checked);
     fd.append('min_dpi',document.getElementById('minDpi').value);
- console.log("MIN DPI VALUE =", document.getElementById('minDpi').value);
+
+    fd.append(
+    'check_align',
+    document.getElementById('alignCheck').checked
+);
+fd.append(
+    'check_justify',
+    document.getElementById('justifyCheck').checked
+);
+ 
     try {
       const res  = await fetch(BACKEND + '/check-pdf', { method: 'POST', body: fd });
       const data = await res.json();

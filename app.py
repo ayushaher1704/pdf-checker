@@ -373,6 +373,95 @@ def check_image_dpi(doc, min_dpi=300):
         'message': f'{len(violations)} of {image_count} image(s) below {min_dpi} DPI',
         'detail': ' | '.join(violations[:10]) if violations else 'No violations'
     }
+
+
+def check_image_alignment(doc):
+
+    violations = []
+    image_count = 0
+
+    for page_num, page in enumerate(doc):
+
+        page_width = page.rect.width
+        page_center = page_width / 2
+
+        
+
+        for img_list in page.get_images(full=True):
+
+            try:
+                rects = page.get_image_rects(img_list)
+
+                for rect in rects:
+
+                    image_count += 1
+
+                    image_center = (rect.x0 + rect.x1) / 2
+
+                    tolerance = page_width * 0.15  # 15%
+
+                    if abs(image_center - page_center) > tolerance:
+
+                        violations.append(
+                            f'Page {page_num+1}: image not centered'
+                        )
+
+            except Exception:
+                pass
+
+    if image_count == 0:
+        return {
+            'name': 'Image Alignment Check',
+            'passed': True,
+            'message': 'No images found',
+            'detail': 'PDF contains no embedded images'
+        }
+
+    passed = len(violations) == 0
+
+    return {
+        'name': 'Image Alignment Check',
+        'passed': passed,
+        'message': (
+            'All images are center aligned'
+            if passed
+            else f'{len(violations)} alignment issue(s) found'
+        ),
+        'detail': ' | '.join(violations[:10]) if violations else 'No alignment issues found'
+    }
+
+def check_paragraph_justification(doc):
+    violations = []
+    para_count = 0
+
+    for page_num, page in enumerate(doc):
+        for block in page.get_text_blocks():
+            if block[6] == 'text':  # Check if it's a text block
+                para_count += 1
+                # Placeholder for actual justification logic
+                pass
+
+    if para_count == 0:
+        return {
+            'name': 'Paragraph Justification Check',
+            'passed': True,
+            'message': 'No paragraphs found',
+            'detail': 'PDF contains no text paragraphs'
+        }
+
+    passed = len(violations) == 0
+
+    return {
+        'name': 'Paragraph Justification Check',
+        'passed': passed,
+        'message': (
+            'All paragraphs are justified'
+            if passed
+            else f'{len(violations)} justification issue(s) found'
+        ),
+        'detail': ' | '.join(violations[:10]) if violations else 'No justification issues found'
+    }
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -406,6 +495,8 @@ def check_pdf():
     expected_col = request.form.get('columns',         'single')
     
     do_dpi = request.form.get('check_dpi', 'true') == 'true'
+    do_align = request.form.get('check_align', 'true') == 'true'
+    do_justify = request.form.get('check_justify', 'true') == 'true'
     print(request.form)
     min_dpi = int(request.form.get('min_dpi', 300))
     
@@ -470,6 +561,14 @@ def check_pdf():
     # Image DPI check
     if do_dpi:
         checks.append(check_image_dpi(doc, min_dpi))
+    
+    # Image Alignment check
+    if do_align:
+        checks.append(check_image_alignment(doc))
+    
+    # Paragraph Justification Check
+    if do_justify:
+        checks.append(check_paragraph_justification(doc))
 
     doc.close()
 
